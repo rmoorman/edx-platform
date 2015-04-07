@@ -485,11 +485,11 @@ class DashboardTest(ModuleStoreTestCase):
         self.assertContains(response, expected_url)
 
 
-class EnrollmentEventTestMixin(object):
-    """ Mixin with assertions for validating enrollment events. """
+class EventTestMixin(object):
+    """ Generic mixin for verifying that events were emitted during a test. """
 
     def setUp(self):
-        super(EnrollmentEventTestMixin, self).setUp()
+        super(EventTestMixin, self).setUp()
         patcher = patch('student.models.tracker')
         self.mock_tracker = patcher.start()
         self.addCleanup(patcher.stop)
@@ -498,6 +498,18 @@ class EnrollmentEventTestMixin(object):
         """Ensures no events were emitted since the last event related assertion"""
         self.assertFalse(self.mock_tracker.emit.called)  # pylint: disable=maybe-no-member
         self.mock_tracker.reset_mock()
+
+    def assert_event_emitted(self, event_name, **kwargs):
+        """ Verify that an event was emitted with the given parameters. """
+        self.mock_tracker.emit.assert_called_with(  # pylint: disable=maybe-no-member
+            event_name,
+            kwargs
+        )
+        self.mock_tracker.reset_mock()
+
+
+class EnrollmentEventTestMixin(EventTestMixin):
+    """ Mixin with assertions for validating enrollment events. """
 
     def assert_enrollment_mode_change_event_was_emitted(self, user, course_key, mode):
         """Ensures an enrollment mode change event was emitted"""
