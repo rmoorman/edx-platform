@@ -6,12 +6,14 @@ import mock
 import unittest
 from ddt import ddt, data, unpack
 
+from django.test import TestCase
 from django.test.utils import override_settings
 from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
+from contentstore.models import PushNotificationConfig
 from contentstore.tests.utils import parse_json, user, registration, AjaxEnabledTestClient
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from contentstore.tests.test_course_settings import CourseTestCase
@@ -349,3 +351,19 @@ class CourseKeyVerificationTestCase(CourseTestCase):
         )
         resp = self.client.get_html(url)
         self.assertEqual(resp.status_code, status_code)
+
+
+class PushNotificationConfigTestCase(TestCase):
+    """
+    Tests MobileAPIConfig
+    """
+
+    def test_notifications_defaults(self):
+        """Check that video_profiles config is returned in order as a list"""
+        self.assertFalse(PushNotificationConfig.is_enabled())
+        self.assertEquals(PushNotificationConfig.current().number_of_retry_attempts, 0)
+
+    def test_notifications_enabled(self):
+        """Check that video_profiles config is returned in order as a list"""
+        PushNotificationConfig(enabled=True).save()
+        self.assertTrue(PushNotificationConfig.is_enabled())
