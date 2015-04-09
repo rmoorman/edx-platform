@@ -23,6 +23,7 @@ from xmodule.modulestore.django import modulestore
 from xmodule.html_module import CourseInfoModule
 
 from xmodule_modifiers import get_course_update_items
+from push_notification import push_course_update
 
 # # This should be in a class which inherits from XmlDescriptor
 log = logging.getLogger(__name__)
@@ -44,9 +45,11 @@ def get_course_updates(location, provided_id, user_id):
 
 def update_course_updates(location, update, passed_id=None, user=None):
     """
-    Either add or update the given course update. It will add it if the passed_id is absent or None. It will update it if
-    it has an passed_id which has a valid value. Until updates have distinct values, the passed_id is the location url + an index
-    into the html structure.
+    Either add or update the given course update.
+    It will add it if the passed_id is absent or None.
+      If the update has been requested to push_notification, then a celery task for such is started.
+    It will update it if it has a passed_id which has a valid value.
+    Until updates have distinct values, the passed_id is the location url + an index into the html structure.
     """
     try:
         course_updates = modulestore().get_item(location)
@@ -73,6 +76,7 @@ def update_course_updates(location, update, passed_id=None, user=None):
             "status": CourseInfoModule.STATUS_VISIBLE
         }
         course_update_items.append(course_update_dict)
+        push_course_update(update, location.course_key)
 
     # update db record
     save_course_update_items(location, course_updates, course_update_items, user)
