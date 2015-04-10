@@ -25,7 +25,7 @@ def learner_profile(request, username):
     Returns:
         HttpResponse: 200 if the page was sent successfully
         HttpResponse: 302 if not logged in (redirect to login page)
-        HttpResponse: 405 if the specified username does not exist
+        HttpResponse: 404 if the specified username does not exist
         HttpResponse: 405 if using an unsupported HTTP method
 
     Example usage:

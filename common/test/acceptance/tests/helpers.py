@@ -328,15 +328,13 @@ class EventsTestMixin(object):
             "Waiting for the correct number of browser events to have been recorded"
         ).fulfill()
 
-        # Verify that the correct number of events were found
+        # Verify that the correct events were fired
         cursor = self.get_matching_browser_events(event_type)
-
         actual_events = []
         for i in range(0, cursor.count()):
             raw_event = cursor.next()
             actual_events.append(json.loads(raw_event["event"]))
-
-        self.assertEqual(actual_events, expected_events)
+        self.assertEqual(expected_events, actual_events)
 
 
 class UniqueCourseTest(WebAppTest):

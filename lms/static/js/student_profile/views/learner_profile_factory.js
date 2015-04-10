@@ -1,14 +1,14 @@
 ;(function (define, undefined) {
     'use strict';
     define([
-        'gettext', 'jquery', 'underscore', 'backbone',
+        'gettext', 'jquery', 'underscore', 'backbone', 'logger',
         'js/student_account/models/user_account_model',
         'js/student_account/models/user_preferences_model',
         'js/views/fields',
         'js/student_profile/views/learner_profile_fields',
         'js/student_profile/views/learner_profile_view',
         'js/student_account/views/account_settings_fields'
-    ], function (gettext, $, _, Backbone, AccountSettingsModel, AccountPreferencesModel, FieldsView,
+    ], function (gettext, $, _, Backbone, Logger, AccountSettingsModel, AccountPreferencesModel, FieldsView,
                  LearnerProfileFieldsView, LearnerProfileView, AccountSettingsFieldViews) {
 
         return function (options) {
@@ -16,14 +16,14 @@
             var learnerProfileElement = $('.wrapper-profile');
 
             var accountPreferencesModel = new AccountPreferencesModel();
-            accountPreferencesModel.url = options['preferences_api_url'];
+            accountPreferencesModel.url = options.preferences_api_url;
 
             var accountSettingsModel = new AccountSettingsModel({
-                'default_public_account_fields': options['default_public_account_fields']
+                'default_public_account_fields': options.default_public_account_fields
             });
-            accountSettingsModel.url = options['accounts_api_url'];
+            accountSettingsModel.url = options.accounts_api_url;
 
-            var editable = options['own_profile'] ? 'toggle' : 'never';
+            var editable = options.own_profile ? 'toggle' : 'never';
 
             var accountPrivacyFieldView = new LearnerProfileFieldsView.AccountPrivacyFieldView({
                 model: accountPreferencesModel,
@@ -37,7 +37,7 @@
                     ['all_users', gettext('Full Profile')]
                 ],
                 helpMessage: '',
-                accountSettingsPageUrl: options['account_settings_page_url']
+                accountSettingsPageUrl: options.account_settings_page_url
             });
 
             var usernameFieldView = new FieldsView.ReadonlyFieldView({
@@ -56,7 +56,7 @@
                     iconName: 'fa-map-marker',
                     placeholderValue: gettext('Add country'),
                     valueAttribute: "country",
-                    options: options['country_options'],
+                    options: options.country_options,
                     helpMessage: ''
                 }),
                 new AccountSettingsFieldViews.LanguageProficienciesFieldView({
@@ -67,7 +67,7 @@
                     iconName: 'fa-comment',
                     placeholderValue: gettext('Add language'),
                     valueAttribute: "language_proficiencies",
-                    options: options['language_options'],
+                    options: options.language_options,
                     helpMessage: ''
                 })
             ];
@@ -86,9 +86,8 @@
 
             var learnerProfileView = new LearnerProfileView({
                 el: learnerProfileElement,
-                profileUserId: options['profile_user_id'],
-                ownProfile: options['own_profile'],
-                has_preferences_access: options['has_preferences_access'],
+                ownProfile: options.own_profile,
+                has_preferences_access: options.has_preferences_access,
                 accountSettingsModel: accountSettingsModel,
                 preferencesModel: accountPreferencesModel,
                 accountPrivacyFieldView: accountPrivacyFieldView,
@@ -101,20 +100,32 @@
                 learnerProfileView.showLoadingError();
             };
 
-            var renderLearnerProfileView = function() {
+            var showLearnerProfileView = function() {
+                // Record that the profile page was viewed
+                var visibility
+                    = options.has_preferences_access ? accountPreferencesModel.get('account_privacy') : 'private';
+                Logger.log('edx.user.settings.viewed', {
+                    user_id: options.profile_user_id,
+                    visibility: visibility,
+                    page: "profile",
+                    requires_parental_consent: accountSettingsModel.get('requires_parental_consent')
+                });
+
+                // Render the view for the first time
                 learnerProfileView.render();
             };
 
             accountSettingsModel.fetch({
                 success: function () {
-                    if (options['has_preferences_access']) {
+                    // Fetch the preferences model if the user has access
+                    if (options.has_preferences_access) {
                         accountPreferencesModel.fetch({
-                            success: renderLearnerProfileView,
+                            success: showLearnerProfileView,
                             error: showLoadingError
                         });
                     }
                     else {
-                        renderLearnerProfileView();
+                        showLearnerProfileView();
                     }
                 },
                 error: showLoadingError
@@ -126,5 +137,5 @@
                 learnerProfileView: learnerProfileView
             };
         };
-    })
+    });
 }).call(this, define || RequireJS.define);

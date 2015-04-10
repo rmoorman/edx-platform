@@ -1,13 +1,12 @@
 ;(function (define, undefined) {
     'use strict';
     define([
-        'gettext', 'jquery', 'underscore', 'backbone', 'logger'
-    ], function (gettext, $, _, Backbone, Logger) {
+        'gettext', 'jquery', 'underscore', 'backbone'
+    ], function (gettext, $, _, Backbone) {
 
         var LearnerProfileView = Backbone.View.extend({
 
             initialize: function (options) {
-                this.profileUserId = options.profileUserId;
                 this.template = _.template($('#learner_profile-tpl').text());
                 _.bindAll(this, 'showFullProfile', 'render', 'renderFields', 'showLoadingError');
                 this.listenTo(this.options.preferencesModel, "change:" + 'account_privacy', this.render);
@@ -30,15 +29,6 @@
                     showFullProfile: this.showFullProfile()
                 }));
                 this.renderFields();
-
-                // Record that the profile page was viewed.
-                Logger.log('edx.user.settings.viewed', {
-                    user_id: this.profileUserId,
-                    visibility: this.options.preferencesModel.get('account_privacy'),
-                    page: "profile",
-                    requires_parental_consent: this.options.accountSettingsModel.get('requires_parental_consent')
-                });
-
                 return this;
             },
 

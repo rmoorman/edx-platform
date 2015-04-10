@@ -16,15 +16,6 @@
                 this.$el.html(this.template({
                     sections: this.options.sectionsData
                 }));
-
-                // Record that the account settings page was viewed.
-                Logger.log('edx.user.settings.viewed', {
-                    user_id: this.accountUserId,
-                    page: "account",
-                    visibility: null,
-                    requires_parental_consent: this.model.get('requires_parental_consent')
-                });
-
                 return this;
             },
 
