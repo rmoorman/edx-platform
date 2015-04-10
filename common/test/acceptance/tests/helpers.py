@@ -283,6 +283,14 @@ class EventsTestMixin(object):
         self.browser_event_collection.drop()
         self.start_time = datetime.now()
 
+    def reset_event_tracking(self):
+        """
+        Resets all event tracking so that previously captured events are removed.
+        """
+        self.event_collection.drop()
+        self.browser_event_collection.drop()
+        self.start_time = datetime.now()
+
     def assert_event_emitted_num_times(self, event_name, event_time, event_user_id, num_times_emitted):
         """
         Tests the number of times a particular event was emitted.

@@ -7,11 +7,12 @@ from ...pages.lms.account_settings import AccountSettingsPage
 from ...pages.lms.auto_auth import AutoAuthPage
 from ...pages.lms.learner_profile import LearnerProfilePage
 from ...pages.lms.dashboard import DashboardPage
+from ..helpers import EventsTestMixin
 
 from bok_choy.web_app_test import WebAppTest
 
 
-class LearnerProfilePageTest(WebAppTest):
+class LearnerProfilePageTest(EventsTestMixin, WebAppTest):
     """
     Tests that verify Student's Profile Page.
     """
@@ -42,6 +43,7 @@ class LearnerProfilePageTest(WebAppTest):
         self.dashboard_page = DashboardPage(self.browser)
 
         self.my_auto_auth_page = AutoAuthPage(self.browser, username=self.USER_1_NAME, email=self.USER_1_EMAIL).visit()
+        self.my_user_id = self.my_auto_auth_page.get_user_id()
         self.my_profile_page = LearnerProfilePage(self.browser, self.USER_1_NAME)
 
         self.other_auto_auth_page = AutoAuthPage(
@@ -52,9 +54,6 @@ class LearnerProfilePageTest(WebAppTest):
 
         self.other_profile_page = LearnerProfilePage(self.browser, self.USER_2_NAME)
 
-        self.set_birth_year(self.MY_USER, birth_year='1990')
-        self.set_birth_year(self.OTHER_USER, birth_year='1990')
-
     def authenticate_as_user(self, user):
         """
         Auto authenticate a user.
@@ -64,7 +63,7 @@ class LearnerProfilePageTest(WebAppTest):
         elif user == self.OTHER_USER:
             self.other_auto_auth_page.visit()
 
-    def set_pubilc_profile_fields_data(self, profile_page):
+    def set_public_profile_fields_data(self, profile_page):
         """
         Fill in the public profile fields of a user.
         """
@@ -86,7 +85,7 @@ class LearnerProfilePageTest(WebAppTest):
             self.my_profile_page.privacy = privacy
 
             if privacy == self.PRIVACY_PUBLIC:
-                self.set_pubilc_profile_fields_data(self.my_profile_page)
+                self.set_public_profile_fields_data(self.my_profile_page)
 
     def visit_other_profile_page(self, user, privacy=None):
         """
@@ -102,7 +101,7 @@ class LearnerProfilePageTest(WebAppTest):
             self.other_profile_page.privacy = privacy
 
             if privacy == self.PRIVACY_PUBLIC:
-                self.set_pubilc_profile_fields_data(self.other_profile_page)
+                self.set_public_profile_fields_data(self.other_profile_page)
 
     def set_birth_year(self, user, birth_year):
         """
@@ -348,3 +347,66 @@ class LearnerProfilePageTest(WebAppTest):
         Then i should see message `You must be over 13 to share a full profile.`
         """
         self.verify_profile_forced_private_message('2010', message='You must be over 13 to share a full profile.')
+
+    def test_eventing(self):
+        """
+        Scenario: research change_initiated events should be emitted when the user changes profile fields
+
+        Given that I am a registered user over 13 years of age
+        When I change my language, country, bio, or privacy settings
+        Then appropriate changed_initiated research events should be emitted
+        """
+        self.authenticate_as_user(self.MY_USER)
+        self.my_profile_page.visit()
+        self.my_profile_page.wait_for_page()
+
+        # Set up initial state
+        self.my_profile_page.privacy = self.PRIVACY_PUBLIC
+        self.set_public_profile_fields_data(self.my_profile_page)
+        self.reset_event_tracking()
+
+        expected_events = []
+
+        self.my_profile_page.value_for_dropdown_field('language_proficiencies', 'French')
+        expected_events.append({
+            u"user_id": int(self.my_user_id),
+            u"settings": {
+                'language_proficiencies': {
+                    "old_value": [{u'code': u'en'}],
+                    "new_value": [{u'code': u'fr'}]
+                }
+            }
+        })
+
+        self.my_profile_page.value_for_dropdown_field('country', 'United States')
+        expected_events.append({
+            u"user_id": int(self.my_user_id),
+            u"settings": {
+                'country': {
+                    "old_value": "GB",
+                    "new_value": "US"
+                }
+            }
+        })
+        self.my_profile_page.value_for_textarea_field('bio', 'Vacationing')
+        expected_events.append({
+            u"user_id": int(self.my_user_id),
+            u"settings": {
+                'bio': {
+                    "old_value": "Nothing Special",
+                    "new_value": "Vacationing"
+                }
+            }
+        })
+        self.my_profile_page.privacy = self.PRIVACY_PRIVATE
+        expected_events.append({
+            u"user_id": int(self.my_user_id),
+            u"settings": {
+                'account_privacy': {
+                    "old_value": "all_users",
+                    "new_value": "private"
+                }
+            }
+        })
+
+        self.verify_browser_events("edx.user.settings.change_initiated", expected_events)
