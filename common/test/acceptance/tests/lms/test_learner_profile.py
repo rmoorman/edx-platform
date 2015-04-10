@@ -203,24 +203,22 @@ class LearnerProfilePageTest(EventsTestMixin, WebAppTest):
 
     def test_fields_on_others_private_profile(self):
         """
-        Scenario: Verify that desired fields are shown when looking at her own private profile.
+        Scenario: Verify that desired fields are shown when looking at another user's private profile.
 
         Given that I am a registered user.
         And I visit others private profile page.
         Then I shouldn't see the profile visibility selector dropdown.
         Then I see some of the profile fields are shown.
         """
-        self.visit_other_profile_page(self.OTHER_USER, privacy=self.PRIVACY_PRIVATE)
         self.visit_other_profile_page(self.MY_USER)
 
         self.assertFalse(self.other_profile_page.privacy_field_visible)
         self.assertEqual(self.other_profile_page.visible_fields, self.PRIVATE_PROFILE_FIELDS)
-
-        self.verify_profile_page_view_event(self.other_user_id, visibility="public")
+        self.verify_profile_page_view_event(self.other_user_id, visibility="private")
 
     def test_fields_on_others_public_profile(self):
         """
-        Scenario: Verify that desired fields are shown when looking at her own public profile.
+        Scenario: Verify that desired fields are shown when looking at another user's public profile.
 
         Given that I am a registered user.
         And I visit others public profile page.
@@ -229,16 +227,14 @@ class LearnerProfilePageTest(EventsTestMixin, WebAppTest):
         Then I shouldn't see the profile visibility selector dropdown.
         Also `location`, `language` and `about me` fields are not editable.
         """
-        self.visit_other_profile_page(self.OTHER_USER, privacy=self.PRIVACY_PUBLIC)
         self.visit_other_profile_page(self.MY_USER)
 
         self.other_profile_page.wait_for_public_fields()
         self.assertFalse(self.other_profile_page.privacy_field_visible)
-
         fields_to_check = self.PUBLIC_PROFILE_FIELDS
         self.assertEqual(self.other_profile_page.visible_fields, fields_to_check)
-
         self.assertEqual(self.my_profile_page.editable_fields, [])
+        self.verify_profile_page_view_event(self.other_user_id, visibility="public")
 
     def _test_dropdown_field(self, field_id, new_value, displayed_value, mode):
         """

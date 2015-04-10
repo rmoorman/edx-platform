@@ -330,12 +330,13 @@ class EventsTestMixin(object):
 
         # Verify that the correct number of events were found
         cursor = self.get_matching_browser_events(event_type)
-        self.assertEqual(cursor.count(), len(expected_events))
 
-        # Verify that each of the expected events was found
-        for expected_event in expected_events:
-            actual_event = cursor.next()
-            self.assertEqual(json.loads(actual_event["event"]), expected_event)
+        actual_events = []
+        for i in range(0, cursor.count()):
+            raw_event = cursor.next()
+            actual_events.append(json.loads(raw_event["event"]))
+
+        self.assertEqual(actual_events, expected_events)
 
 
 class UniqueCourseTest(WebAppTest):
