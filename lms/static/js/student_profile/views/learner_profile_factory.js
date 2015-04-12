@@ -110,11 +110,12 @@
 
             var showLearnerProfileView = function() {
                 // Record that the profile page was viewed
+                debugger
                 Logger.log('edx.user.settings.viewed', {
                     user_id: options.profile_user_id,
                     visibility: getProfileVisibility(),
                     page: "profile",
-                    requires_parental_consent: accountSettingsModel.get('requires_parental_consent')
+                    requires_parental_consent: options.profile_requires_parental_consent
                 });
 
                 // Render the view for the first time

@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.views.decorators.http import require_http_methods
 
 from edxmako.shortcuts import render_to_response
-from student.models import User
+from student.models import User, UserProfile
 
 
 @login_required
@@ -55,6 +55,7 @@ def learner_profile_context(logged_in_username, profile_username, user_is_staff)
         ObjectDoesNotExist: the specified profile_username does not exist.
     """
     profile_user = User.objects.get(username=profile_username)
+    profile_user_profile = UserProfile.objects.get(user=profile_user)
     language_options = [language for language in settings.ALL_LANGUAGES]
 
     country_options = [
@@ -72,6 +73,7 @@ def learner_profile_context(logged_in_username, profile_username, user_is_staff)
             'preferences_api_url': reverse('preferences_api', kwargs={'username': profile_username}),
             'account_settings_page_url': reverse('account_settings'),
             'has_preferences_access': (logged_in_username == profile_username or user_is_staff),
+            'profile_requires_parental_consent': profile_user_profile.requires_parental_consent(),
             'own_profile': (logged_in_username == profile_username),
             'country_options': country_options,
             'language_options': language_options,

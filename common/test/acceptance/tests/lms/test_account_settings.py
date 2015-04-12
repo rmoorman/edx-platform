@@ -56,7 +56,7 @@ class AccountSettingsPageTest(EventsTestMixin, WebAppTest):
                 u"user_id": int(self.user_id),
                 u"page": u"account",
                 u"visibility": None,
-                u"requires_parental_consent": True,
+                u"requires_parental_consent": False,
             }]
         )
 
