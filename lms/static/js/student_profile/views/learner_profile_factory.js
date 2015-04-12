@@ -100,13 +100,19 @@
                 learnerProfileView.showLoadingError();
             };
 
+            var getProfileVisibility = function() {
+                if (options.has_preferences_access) {
+                    return accountPreferencesModel.get('account_privacy');
+                } else {
+                    return accountSettingsModel.get('profile_is_public') ? 'all_users' : 'private';
+                }
+            };
+
             var showLearnerProfileView = function() {
                 // Record that the profile page was viewed
-                var visibility
-                    = options.has_preferences_access ? accountPreferencesModel.get('account_privacy') : 'private';
                 Logger.log('edx.user.settings.viewed', {
                     user_id: options.profile_user_id,
-                    visibility: visibility,
+                    visibility: getProfileVisibility(),
                     page: "profile",
                     requires_parental_consent: accountSettingsModel.get('requires_parental_consent')
                 });
